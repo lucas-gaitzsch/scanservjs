@@ -35,7 +35,7 @@ function sendError(res, code, data) {
   } else if (typeof data === 'string') {
     content.message = data;
   }
-  res.status(code).send(content);
+  res.status(data.code || code).send(content);
 }
 
 /**
@@ -148,6 +148,41 @@ const EndpointSpecs = [
     method: 'post',
     path: '/api/v1/scan',
     callback: async (req, res) => res.send(await api.scan(req.body))
+  },
+  {
+    method: 'get',
+    path: '/api/v1/scan/jobs',
+    callback: async (req, res) => res.send(api.scanJobList(req.query.active === 'true'))
+  },
+  {
+    method: 'post',
+    path: '/api/v1/scan/jobs',
+    callback: async (req, res) => res.send(api.scanJobCreate(req.body))
+  },
+  {
+    method: 'get',
+    path: /\/api\/v1\/scan\/jobs\/([^/]+)$/,
+    callback: async (req, res) => res.send(api.scanJobRead(req.params[0]))
+  },
+  {
+    method: 'post',
+    path: /\/api\/v1\/scan\/jobs\/([^/]+)\/pages$/,
+    callback: async (req, res) => res.send(await api.scanJobScanPage(req.params[0]))
+  },
+  {
+    method: 'post',
+    path: /\/api\/v1\/scan\/jobs\/([^/]+)\/pages\/(\d+)\/rescan$/,
+    callback: async (req, res) => res.send(await api.scanJobRescanPage(req.params[0], req.params[1]))
+  },
+  {
+    method: 'post',
+    path: /\/api\/v1\/scan\/jobs\/([^/]+)\/finish$/,
+    callback: async (req, res) => res.send(await api.scanJobFinish(req.params[0]))
+  },
+  {
+    method: 'delete',
+    path: /\/api\/v1\/scan\/jobs\/([^/]+)$/,
+    callback: async (req, res) => res.send(api.scanJobCancel(req.params[0]))
   },
   {
     method: 'get',

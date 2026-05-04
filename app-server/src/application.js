@@ -15,6 +15,8 @@ module.exports = new class Application {
     this._config = null;
     /** @type {ScanimageCommand} */
     this._scanimageCommand = null;
+    /** @type {ScanJobManager} */
+    this._scanJobManager = null;
   }
 
   log() {
@@ -138,5 +140,13 @@ module.exports = new class Application {
 
   filterBuilder() {
     return new FilterBuilder(this.config());
+  }
+
+  scanJobManager() {
+    if (this._scanJobManager === null) {
+      const ScanJobManager = require('./classes/scan-job-manager');
+      this._scanJobManager = new ScanJobManager(this.config());
+    }
+    return this._scanJobManager;
   }
 };

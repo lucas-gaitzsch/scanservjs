@@ -13,14 +13,21 @@ const config = application.config();
 const scanimageCommand = application.scanimageCommand();
 
 class ScanController {
-  constructor() {
+  constructor(options) {
+    options = Object.assign({
+      tempDirectory: config.tempDirectory,
+      onProcess: null
+    }, options);
+
     /** @type {Context} */
     this.context = null;
 
     /** @type {ScanRequest} */
     this.request = null;
 
-    this.dir = FileInfo.create(config.tempDirectory);
+    this.tempDirectory = options.tempDirectory;
+    this.onProcess = options.onProcess;
+    this.dir = FileInfo.create(this.tempDirectory);
   }
 
   /**
@@ -63,7 +70,9 @@ class ScanController {
    */
   async scan() {
     log.info('Scanning');
-    await Process.spawn(scanimageCommand.scan(this.request));
+    await Process.spawn(scanimageCommand.scan(this.request, {
+      tempDirectory: this.tempDirectory
+    }), null, { onProcess: this.onProcess });
   }
 
   /**
@@ -85,13 +94,16 @@ class ScanController {
     if (this.request.filters.length > 0) {
       const stdin = files.map(f => `${f.name}\n`).join('');
       const cmd = `convert @- ${application.filterBuilder().build(this.request.filters)} f-%04d.tif`;
-      await Process.spawn(cmd, stdin, { cwd: config.tempDirectory });
+      await Process.spawn(cmd, stdin, { cwd: this.tempDirectory, onProcess: this.onProcess });
       files = (await this.listFiles()).filter(f => f.name.match(/f-\d{4}\.tif/));
     }
 
     const stdin = files.map(f => `${f.name}\n`).join('');
     log.debug('Executing cmds:', this.pipeline.commands);
-    const stdout = await Process.chain(this.pipeline.commands, stdin, { cwd: config.tempDirectory });
+    const stdout = await Process.chain(this.pipeline.commands, stdin, {
+      cwd: this.tempDirectory,
+      onProcess: this.onProcess
+    });
     let filenames = stdout.toString().split('\n').filter(f => f.length > 0);
 
     let filename = filenames[0];
@@ -99,13 +111,13 @@ class ScanController {
     if (filenames.length > 1) {
       filename = 'archive.zip';
       extension = 'zip';
-      Zip.file(`${config.tempDirectory}/${filename}`)
-        .deflate(filenames.map(f => `${config.tempDirectory}/${f}`));
+      Zip.file(`${this.tempDirectory}/${filename}`)
+        .deflate(filenames.map(f => `${this.tempDirectory}/${f}`));
     }
 
     const destination = `${config.outputDirectory}/${config.filename()}.${extension}`;
     await FileInfo
-      .create(`${config.tempDirectory}/${filename}`)
+      .create(`${this.tempDirectory}/${filename}`)
       .move(destination);
 
     log.debug({output: destination});
@@ -123,9 +135,12 @@ class ScanController {
    * @returns {Promise.<Buffer>}
    */
   async imageAsBuffer() {
-    const filepath = scanimageCommand.filename(this.request.index);
+    const filepath = scanimageCommand.filename(this.request.index, this.tempDirectory);
     let buffer = FileInfo.create(filepath).toBuffer();
-    buffer = await Process.chain(config.previewPipeline.commands, buffer, { ignoreErrors: true });
+    buffer = await Process.chain(config.previewPipeline.commands, buffer, {
+      ignoreErrors: true,
+      onProcess: this.onProcess
+    });
     return buffer;
   }
 
@@ -138,7 +153,7 @@ class ScanController {
   async updatePreview(filename) {
     const device = this.context.getDevice(this.request.params.deviceId);
     const cmdBuilder = new CommandBuilder(config.convert)
-      .arg(`${config.tempDirectory}/${filename}`);
+      .arg(`${this.tempDirectory}/${filename}`);
 
     const width = 868;
     if (device.geometry) {
@@ -156,7 +171,7 @@ class ScanController {
 
     cmdBuilder.arg(`${config.previewDirectory}/preview.tif`);
 
-    await Process.spawn(cmdBuilder.build());
+    await Process.spawn(cmdBuilder.build(), null, { onProcess: this.onProcess });
   }
 
   /**
@@ -198,8 +213,8 @@ module.exports = {
    * @param {ScanRequest} req
    * @returns {Promise.<ScanResponse>}
    */
-  async run(req) {
-    const scan = new ScanController();
+  async run(req, options) {
+    const scan = new ScanController(options);
     return await scan.execute(req);
   }
 };

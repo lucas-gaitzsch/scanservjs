@@ -197,6 +197,10 @@ export default {
         timer: 0,
         width: 400,
         key: 0
+      },
+      job: {
+        pollTimer: 0,
+        status: null
       }
     };
   },
@@ -320,11 +324,18 @@ export default {
     this._resizePreview();
     this.readContext().then(() => {
       this.readPreview();
+      this.reconnectJob();
     });
     window.addEventListener('resize', () => {
       clearTimeout(this.preview.timer);
       this.preview.timer = setTimeout(this._resizePreview, 100);
     });
+    window.addEventListener('pageshow', this.reconnectJob);
+  },
+
+  beforeUnmount() {
+    this.stopPollingJob();
+    window.removeEventListener('pageshow', this.reconnectJob);
   },
 
   methods: {
@@ -454,6 +465,193 @@ export default {
       this.$emit('notify', notification);
     },
 
+    clearActiveJob() {
+      storage.activeJobId = null;
+      this.job.status = null;
+      this.stopPollingJob();
+    },
+
+    startPollingJob() {
+      if (!this.job.pollTimer) {
+        this.job.pollTimer = window.setInterval(this.pollJob, 2000);
+      }
+    },
+
+    stopPollingJob() {
+      if (this.job.pollTimer) {
+        window.clearInterval(this.job.pollTimer);
+        this.job.pollTimer = 0;
+      }
+    },
+
+    async fetchJob(id) {
+      return await Common.fetch(`api/v1/scan/jobs/${id}`, {
+        cache: 'no-store',
+        method: 'GET'
+      });
+    },
+
+    async pollJob() {
+      if (!storage.activeJobId) {
+        this.stopPollingJob();
+        return;
+      }
+
+      try {
+        const job = await this.fetchJob(storage.activeJobId);
+        this.handleJob(job, false);
+      } catch (error) {
+        this.notify({ type: 'e', message: error });
+        this.clearActiveJob();
+      }
+    },
+
+    async reconnectJob() {
+      if (storage.activeJobId) {
+        try {
+          const job = await this.fetchJob(storage.activeJobId);
+          if (['created', 'waiting', 'scanning', 'processing'].includes(job.status)) {
+            if (window.confirm(`${this.$t('scan.btn-scan')}: continue active scan job?`)) {
+              this.handleJob(job, true);
+            } else {
+              this.cancelJob(job.id);
+            }
+          } else if (['completed', 'failed', 'cancelled', 'expired'].includes(job.status)) {
+            this.handleJob(job, true);
+          }
+        } catch (error) {
+          storage.activeJobId = null;
+        }
+        return;
+      }
+
+      try {
+        const jobs = await Common.fetch('api/v1/scan/jobs?active=true', {
+          cache: 'no-store',
+          method: 'GET'
+        });
+        if (jobs.length === 1
+          && window.confirm(`${this.$t('scan.btn-scan')}: continue active scan job?`)) {
+          storage.activeJobId = jobs[0].id;
+          this.handleJob(jobs[0], true);
+        } else if (jobs.length === 1) {
+          this.cancelJob(jobs[0].id);
+        }
+      } catch (error) {
+        // Reconnect is best-effort and must not block normal scanning.
+      }
+    },
+
+    handleJob(job, fromReconnect) {
+      this.job.status = job.status;
+      if (['scanning', 'processing', 'created'].includes(job.status)) {
+        this.startPollingJob();
+        return;
+      }
+
+      this.stopPollingJob();
+      if (job.status === 'waiting') {
+        if (job.batch === 'manual') {
+          this.openManualJobDialog(job, fromReconnect);
+        }
+        return;
+      }
+
+      this.clearActiveJob();
+      if (job.status === 'completed') {
+        if (storage.settings.showFilesAfterScan) {
+          this.$router.push('/files');
+        } else {
+          this.readPreview();
+        }
+      } else if (['failed', 'cancelled', 'expired'].includes(job.status)) {
+        this.notify({ type: 'e', message: job.error || `Scan job ${job.status}` });
+      }
+    },
+
+    openManualJobDialog(job, fromReconnect) {
+      const page = job.pages[job.pages.length - 1];
+      const options = {
+        message: page
+          ? `${this.$t('scan.message:preview-of-page')} ${page.index}`
+          : this.$t('scan.message:turn-documents'),
+        image: page ? page.image : null,
+        onFinish: () => {
+          this.finishJob(job.id);
+        },
+        onNext: () => {
+          this.scanNextPage(job.id);
+        },
+        onCancel: () => {
+          this.cancelJob(job.id);
+        }
+      };
+      if (page) {
+        options.onRescan = () => {
+          this.rescanPage(job.id, page.index);
+        };
+      }
+      if (fromReconnect || page) {
+        this.$refs.batchDialog.open(options);
+      }
+    },
+
+    async scanNextPage(id) {
+      this.mask(1);
+      try {
+        const job = await Common.fetch(`api/v1/scan/jobs/${id}/pages`, {
+          method: 'POST'
+        });
+        this.handleJob(job, false);
+      } catch (error) {
+        this.notify({ type: 'e', message: error });
+        this.clearActiveJob();
+      }
+      this.mask(-1);
+    },
+
+    async rescanPage(id, index) {
+      this.mask(1);
+      try {
+        const job = await Common.fetch(`api/v1/scan/jobs/${id}/pages/${index}/rescan`, {
+          method: 'POST'
+        });
+        this.handleJob(job, false);
+      } catch (error) {
+        this.notify({ type: 'e', message: error });
+        this.clearActiveJob();
+      }
+      this.mask(-1);
+    },
+
+    async finishJob(id) {
+      this.mask(1);
+      try {
+        const job = await Common.fetch(`api/v1/scan/jobs/${id}/finish`, {
+          method: 'POST'
+        });
+        this.handleJob(job, false);
+      } catch (error) {
+        this.notify({ type: 'e', message: error });
+        this.clearActiveJob();
+      }
+      this.mask(-1);
+    },
+
+    async cancelJob(id) {
+      this.mask(1);
+      try {
+        const job = await Common.fetch(`api/v1/scan/jobs/${id}`, {
+          method: 'DELETE'
+        });
+        this.handleJob(job, false);
+      } catch (error) {
+        this.notify({ type: 'e', message: error });
+        this.clearActiveJob();
+      }
+      this.mask(-1);
+    },
+
     onCoordinatesChange() {
       const adjusted = this.scaleCoordinates(
         this.request.params,
@@ -550,50 +748,25 @@ export default {
       this.request = this.buildRequest();
     },
 
-    scan(index) {
-      if (index !== undefined) {
-        this.request.index = index;
-      }
-
+    scan() {
       const data = Common.clone(this.request);
-      this._fetch('api/v1/scan', {
+      this._fetch('api/v1/scan/jobs', {
         method: 'POST',
         body: JSON.stringify(data),
         headers: {
           'Accept': 'application/json',
           'Content-Type': 'application/json'
         }
-      }).then((response) => {
-        if (response && 'index' in response) {
-          const options = {
-            message: this.$t('scan.message:turn-documents'),
-            onFinish: () => {
-            },
-            onNext: () => {
-              this.request.index = response.index + 1;
-              this.scan();
-            }
-          };
-          if (response.image) {
-            options.message = `${this.$t('scan.message:preview-of-page')} ${response.index}`;
-            options.image = response.image;
-            options.onFinish = () => {
-              this.request.index = -1;
-              this.scan();
-            };
-            options.onRescan = () => {
-              this.request.index = response.index;
-              this.scan();
-            };
-          }
-          this.$refs.batchDialog.open(options);
-        } else {
-          // Finish
-          if (storage.settings.showFilesAfterScan) {
-            this.$router.push('/files');
+      }).then((job) => {
+        if (job && job.id) {
+          storage.activeJobId = job.id;
+          if (job.batch === 'manual') {
+            this.scanNextPage(job.id);
           } else {
-            this.readPreview();
+            this.handleJob(job, false);
           }
+        } else {
+          this.notify({ type: 'e', message: 'Invalid scan job response' });
         }
       });
     },

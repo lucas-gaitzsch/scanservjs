@@ -16,6 +16,18 @@ export default class Storage {
     }
   }
 
+  get activeJobId() {
+    return localStorage.activeJobId || null;
+  }
+
+  set activeJobId(activeJobId) {
+    if (activeJobId) {
+      localStorage.activeJobId = activeJobId;
+    } else {
+      localStorage.removeItem('activeJobId');
+    }
+  }
+
   /**
    * @returns {Settings}
    */

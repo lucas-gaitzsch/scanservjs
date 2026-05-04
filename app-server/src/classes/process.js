@@ -46,8 +46,11 @@ module.exports = new class Process {
       encoding: 'binary',
       shell: true,
       maxBuffer: MAX_BUFFER,
-      ignoreErrors: false
+      ignoreErrors: false,
+      onProcess: null
     }, options);
+    const onProcess = options.onProcess;
+    delete options.onProcess;
 
     if (this.log().getLevel() > this.log().levels.DEBUG) {
       this.log().info({spawn: cmd});
@@ -65,6 +68,9 @@ module.exports = new class Process {
       let stdout = Buffer.alloc(0);
       let stderr = '';
       const proc = spawn(cmd, [], options);
+      if (onProcess) {
+        onProcess(proc);
+      }
       proc.stdout.on('data', (data) => {
         stdout = Buffer.concat([stdout, data]);
       });

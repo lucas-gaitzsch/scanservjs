@@ -58,16 +58,20 @@ module.exports = class ScanimageCommand {
    * @param {number} page
    * @returns {string}
    */
-  filename(page) {
+  filename(page, tempDirectory) {
+    tempDirectory = tempDirectory || this.config.tempDirectory;
     const number = `000${page}`.slice(-4);
-    return `${this.config.tempDirectory}/${Constants.TEMP_FILESTEM}-0-${number}.tif`;
+    return `${tempDirectory}/${Constants.TEMP_FILESTEM}-0-${number}.tif`;
   }
 
   /**
    * @param {ScanRequest} request
    * @returns {string}
    */
-  scan(request) {
+  scan(request, options) {
+    options = Object.assign({
+      tempDirectory: this.config.tempDirectory
+    }, options);
     log.debug(LogFormatter.format().full(request));
     const params = request.params;
     const cmdBuilder = new CommandBuilder(this.config.scanimage);
@@ -122,12 +126,12 @@ module.exports = class ScanimageCommand {
       cmdBuilder.arg('--disable-dynamic-lineart=yes');
     }
     if ([Constants.BATCH_AUTO, Constants.BATCH_COLLATE_STANDARD, Constants.BATCH_COLLATE_REVERSE].includes(request.batch)) {
-      const pattern = `${this.config.tempDirectory}/${Constants.TEMP_FILESTEM}-${request.index}-%04d.tif`;
+      const pattern = `${options.tempDirectory}/${Constants.TEMP_FILESTEM}-${request.index}-%04d.tif`;
       cmdBuilder.argPair('--batch', pattern);
     } else {
       const outputFile = 'isPreview' in params && params.isPreview
         ? `${this.config.previewDirectory}/preview.tif`
-        : this.filename(request.index);
+        : this.filename(request.index, options.tempDirectory);
 
       if (this.scanimage.supportsOutputFlag) {
         cmdBuilder.arg('-o', outputFile);

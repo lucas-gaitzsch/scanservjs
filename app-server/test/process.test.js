@@ -34,7 +34,7 @@ describe('Process', () => {
   it('error', async () => {
     await assert.rejects(
       async () => await Process.spawn('hello'),
-      /.*\/bin\/sh: 1: hello/);
+      /hello.*(not found|Kommando nicht gefunden)/);
   });
 
   it('ignore error', async () => {

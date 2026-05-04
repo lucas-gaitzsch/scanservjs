@@ -54,6 +54,11 @@ module.exports = class Config {
       thumbnailDirectory: path.join(BASE_PATH, 'data/thumbnail'),
       previewDirectory: path.join(BASE_PATH, 'data/preview'),
       tempDirectory: path.join(BASE_PATH, 'data/temp'),
+      jobsDirectory: path.join(BASE_PATH, 'data/jobs'),
+      jobsGcInterval: 15 * 60 * 1000,
+      jobsActiveMaxAge: 60 * 60 * 1000,
+      jobsCompletedMaxAge: 60 * 60 * 1000,
+      jobsFailedMaxAge: 24 * 60 * 60 * 1000,
 
       users: {},
 

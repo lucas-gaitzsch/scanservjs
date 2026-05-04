@@ -4,7 +4,6 @@ const FileInfo = require('./classes/file-info');
 const LogFormatter = require('./classes/log-formatter');
 const Process = require('./classes/process');
 const Request = require('./classes/request');
-const ScanController = require('./scan-controller');
 
 const application = require('./application');
 const config = application.config();
@@ -147,7 +146,36 @@ module.exports = new class Api {
    * @returns {ScanResponse}
    */
   async scan(req) {
-    return await ScanController.run(req);
+    return application.scanJobManager().create(req);
+  }
+
+  scanJobList(active) {
+    const manager = application.scanJobManager();
+    return active ? manager.listActive() : manager.list();
+  }
+
+  scanJobRead(id) {
+    return application.scanJobManager().get(id);
+  }
+
+  scanJobCreate(req) {
+    return application.scanJobManager().create(req);
+  }
+
+  async scanJobScanPage(id) {
+    return await application.scanJobManager().scanPage(id);
+  }
+
+  async scanJobRescanPage(id, index) {
+    return await application.scanJobManager().rescanPage(id, index);
+  }
+
+  async scanJobFinish(id) {
+    return await application.scanJobManager().finish(id);
+  }
+
+  scanJobCancel(id) {
+    return application.scanJobManager().cancel(id);
   }
 
   /**

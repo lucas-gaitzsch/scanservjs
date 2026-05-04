@@ -12,6 +12,8 @@ ExpressConfigurer.with(app)
   .swagger()
   .endpoints();
 
+application.scanJobManager().startGc();
+
 const server = app.listen(config.port, config.host, () => {
   const log = require('loglevel').getLogger('server');
   log.info(`scanservjs started listening: https://${config.host}:${config.port}`);

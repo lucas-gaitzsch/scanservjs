@@ -9,6 +9,7 @@
  * @property {maxBuffer} [number]
  * @property {ignoreErrors} [boolean]
  * @property {string} [cwd]
+ * @property {function} [onProcess]
  */
 
 /**
@@ -74,6 +75,11 @@
  * @property {string} thumbnailDirectory
  * @property {string} previewDirectory
  * @property {string} tempDirectory
+ * @property {string} jobsDirectory
+ * @property {number} jobsGcInterval
+ * @property {number} jobsActiveMaxAge
+ * @property {number} jobsCompletedMaxAge
+ * @property {number} jobsFailedMaxAge
  * @property {number} previewResolution
  * @property {Pipeline} previewPipeline
  * @property {Filter[]} filters
@@ -112,6 +118,27 @@
  * @property {string} [image]
  * @property {number} [index]
  * @property {FileInfo} [file]
+ */
+
+/**
+ * @typedef {Object} ScanJobPage
+ * @property {number} index
+ * @property {string} status
+ * @property {string} [image]
+ */
+
+/**
+ * @typedef {Object} ScanJob
+ * @property {string} id
+ * @property {string} createdAt
+ * @property {string} updatedAt
+ * @property {string} status
+ * @property {ScanRequest} request
+ * @property {string} batch
+ * @property {number} currentIndex
+ * @property {ScanJobPage[]} pages
+ * @property {FileInfo} [file]
+ * @property {string} [error]
  */
 
 /**

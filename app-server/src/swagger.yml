@@ -232,14 +232,15 @@ paths:
 
   /api/v1/scan:
     post:
-      summary: Create a scan
+      summary: Create a scan job
       description: |
-        Creates a scan.
+        Creates a scan job.
 
         The request body must contain a ScanRequest object.
 
         Not all ScanRequest properties are mandatory, and many properties will
-        be defaulted where possible.
+        be defaulted where possible. Manual batch jobs wait for explicit page
+        scans. Other scan modes run asynchronously.
       tags:
         - Scanner
       requestBody:
@@ -255,7 +256,145 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/definitions/ScanResponse'
+                $ref: '#/definitions/ScanJob'
+
+  /api/v1/scan/jobs:
+    get:
+      summary: Lists scan jobs
+      tags:
+        - Scanner
+      parameters:
+        - name: active
+          in: query
+          required: false
+          schema:
+            type: boolean
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/definitions/ScanJob'
+
+    post:
+      summary: Creates a scan job
+      tags:
+        - Scanner
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/definitions/ScanRequest'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/definitions/ScanJob'
+
+  /api/v1/scan/jobs/{jobId}:
+    get:
+      summary: Reads a scan job
+      tags:
+        - Scanner
+      parameters:
+        - name: jobId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/definitions/ScanJob'
+
+    delete:
+      summary: Cancels a scan job
+      tags:
+        - Scanner
+      parameters:
+        - name: jobId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/definitions/ScanJob'
+
+  /api/v1/scan/jobs/{jobId}/pages:
+    post:
+      summary: Scans the next manual page
+      tags:
+        - Scanner
+      parameters:
+        - name: jobId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/definitions/ScanJob'
+
+  /api/v1/scan/jobs/{jobId}/pages/{index}/rescan:
+    post:
+      summary: Rescans a manual page
+      tags:
+        - Scanner
+      parameters:
+        - name: jobId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: index
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/definitions/ScanJob'
+
+  /api/v1/scan/jobs/{jobId}/finish:
+    post:
+      summary: Finishes a manual scan job
+      tags:
+        - Scanner
+      parameters:
+        - name: jobId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/definitions/ScanJob'
 
   /api/v1/system:
     get:
@@ -615,3 +754,45 @@ definitions:
         example: 1
       file:
         $ref: '#/definitions/FileInfo'
+
+  ScanJobPage:
+    properties:
+      index:
+        type: integer
+        example: 1
+      status:
+        type: string
+        example: completed
+      image:
+        type: string
+
+  ScanJob:
+    properties:
+      id:
+        type: string
+        example: 018f65b4-03ad-7d90-94f1-df8c6f91d6ce
+      createdAt:
+        type: string
+        example: '2026-05-03T10:00:00.000Z'
+      updatedAt:
+        type: string
+        example: '2026-05-03T10:01:00.000Z'
+      status:
+        type: string
+        example: waiting
+      request:
+        $ref: '#/definitions/ScanRequest'
+      batch:
+        type: string
+        example: manual
+      currentIndex:
+        type: integer
+        example: 2
+      pages:
+        type: array
+        items:
+          $ref: '#/definitions/ScanJobPage'
+      file:
+        $ref: '#/definitions/FileInfo'
+      error:
+        type: string
