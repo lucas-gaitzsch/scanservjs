@@ -1,7 +1,7 @@
 <template>
   <div>
     <v-app-bar class="elevation-0" :color="appColor" app>
-      <v-app-bar-nav-icon @click.stop="drawer = !drawer" />
+      <v-app-bar-nav-icon v-if="!smAndDown" @click.stop="drawer = !drawer" />
       <v-toolbar-title class="unselectable">{{ $t('global.application-name') }}</v-toolbar-title>
       <v-spacer />
       <v-toolbar-items class="d-none d-md-block">
@@ -56,12 +56,32 @@
         </div>
       </template>
     </v-navigation-drawer>
+
+    <v-bottom-navigation v-if="smAndDown" grow app :color="appColor">
+      <v-btn @click="go('/scan')">
+        <v-icon :icon="mdiCamera" />
+        <span>{{ $t('navigation.scan') }}</span>
+      </v-btn>
+      <v-btn @click="go('/files')">
+        <v-icon :icon="mdiFileDocumentMultiple" />
+        <span>{{ $t('navigation.files') }}</span>
+      </v-btn>
+      <v-btn @click="go('/settings')">
+        <v-icon :icon="mdiCog" />
+        <span>{{ $t('navigation.settings') }}</span>
+      </v-btn>
+      <v-btn @click="go('/about')">
+        <v-icon :icon="mdiInformation" />
+        <span>{{ $t('navigation.about') }}</span>
+      </v-btn>
+    </v-bottom-navigation>
   </div>
 </template>
 
 <script>
 import Constants from '../classes/constants';
 import { mdiCamera, mdiCog, mdiFileDocumentMultiple, mdiInformation, mdiTools } from '@mdi/js';
+import { useDisplay } from 'vuetify';
 export default {
   name: 'Navigation',
 
@@ -73,12 +93,14 @@ export default {
   },
 
   setup() {
+    const { smAndDown } = useDisplay();
     return {
       mdiCamera,
       mdiCog,
       mdiFileDocumentMultiple,
       mdiInformation,
-      mdiTools
+      mdiTools,
+      smAndDown
     };
   },
 

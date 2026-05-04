@@ -1,5 +1,58 @@
 <template>
-  <v-data-table
+  <div v-if="smAndDown" class="files-mobile">
+    <v-card class="mb-3" rounded="lg">
+      <v-card-text>
+        <v-checkbox v-model="thumbnails.show" hide-details :label="$t('files.thumbnail-show')" />
+        <v-slider v-if="thumbnails.show" v-model="thumbnails.size" min="32" max="128"
+          step="16" hide-details :label="`${$t('files.thumbnail-size')} (${thumbnails.size})`" />
+      </v-card-text>
+    </v-card>
+
+    <v-card v-for="file in files" :key="file.name" class="mb-3" rounded="lg">
+      <v-card-text class="files-mobile-card">
+        <v-checkbox v-model="selectedFiles" class="files-mobile-select" hide-details :value="file" />
+        <v-img v-if="thumbnails.show" :src="`api/v1/files/${file.name}/thumbnail`"
+          class="files-mobile-thumb" :height="thumbnails.size" :width="thumbnails.size" :contain="true" />
+        <div class="files-mobile-meta">
+          <div class="font-weight-medium text-truncate">{{ file.name }}</div>
+          <div class="text-caption text-medium-emphasis">{{ $d(new Date(file.lastModified), 'long') }}</div>
+          <div class="text-caption text-medium-emphasis">{{ file.sizeString }}</div>
+        </div>
+        <v-menu>
+          <template #activator="{ props }">
+            <v-btn icon variant="text" v-bind="props">
+              <v-icon :icon="mdiDotsVertical" />
+            </v-btn>
+          </template>
+          <v-list>
+            <v-list-item :title="$t('files.filename')" @click="open(file)">
+              <template #prepend><v-icon :icon="mdiDownload" /></template>
+            </v-list-item>
+            <v-list-item :title="$t('files.dialog:rename')" @click="fileRename(file)">
+              <template #prepend><v-icon :icon="mdiPencil" /></template>
+            </v-list-item>
+            <v-list-item :title="$t('files.button:delete-selected')" @click="fileRemove(file)">
+              <template #prepend><v-icon :icon="mdiDelete" /></template>
+            </v-list-item>
+          </v-list>
+        </v-menu>
+      </v-card-text>
+    </v-card>
+
+    <div v-if="selectedFiles.length > 0" class="files-mobile-actions">
+      <v-btn color="warning" variant="tonal" @click="multipleDelete">{{ $t('files.button:delete-selected') }}</v-btn>
+      <v-menu v-if="actions.length > 0">
+        <template #activator="{ props }">
+          <v-btn color="primary" v-bind="props">{{ $t('files.button:action-selected') }}</v-btn>
+        </template>
+        <v-list>
+          <v-list-item v-for="(action, index) in actions" :key="index" :title="action" @click="multipleAction(action)" />
+        </v-list>
+      </v-menu>
+    </div>
+  </div>
+
+  <v-data-table v-else
       v-model="selectedFiles"
       :headers="headers"
       :items="files"
@@ -309,5 +362,47 @@ tbody > tr > td {
 }
 div.v-input.v-input__slider {
   max-width: 250px;
+}
+</style>
+
+<style scoped>
+.files-mobile-card {
+  align-items: center;
+  display: flex;
+  gap: 12px;
+  min-width: 0;
+}
+
+.files-mobile-select {
+  flex: 0 0 auto;
+}
+
+.files-mobile-thumb {
+  flex: 0 0 auto;
+}
+
+.files-mobile-meta {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.files-mobile-actions {
+  background: rgb(var(--v-theme-surface));
+  border-top: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
+  bottom: 56px;
+  display: grid;
+  gap: 8px;
+  grid-template-columns: 1fr 1fr;
+  left: 0;
+  padding: 12px 16px calc(12px + env(safe-area-inset-bottom));
+  position: fixed;
+  right: 0;
+  z-index: 1000;
+}
+
+@media (max-width: 959px) {
+  .files-mobile {
+    padding-bottom: 88px;
+  }
 }
 </style>

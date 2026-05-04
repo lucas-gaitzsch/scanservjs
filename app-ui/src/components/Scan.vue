@@ -1,9 +1,9 @@
 <template>
-  <div>
+  <div class="scan-page">
     <v-row>
       <v-spacer />
 
-      <v-col cols="12" md="3" class="mb-10 mb-md-0">
+      <v-col cols="12" md="3" class="scan-settings mb-6 mb-md-0" order="2" order-md="1">
         <div class="d-flex">
           <v-select v-if="context.devices.length > 0"
             v-model="device"
@@ -63,26 +63,28 @@
           item-title="text"
           item-value="value" />
 
-        <div class="d-flex flex-row-reverse flex-wrap">
-          <v-btn color="blue" class="ml-1 mb-1" @click="scan(1)">{{ $t('scan.btn-scan') }} <v-icon class="ml-2" :icon="mdiCamera" /></v-btn>
+        <div v-if="!smAndDown" class="d-flex flex-row-reverse flex-wrap">
+          <v-btn color="blue" class="ml-1 mb-1" size="large" @click="scan(1)">{{ $t('scan.btn-scan') }} <v-icon class="ml-2" :icon="mdiCamera" /></v-btn>
           <v-btn v-if="geometry" color="green" class="ml-1 mb-1" @click="createPreview">{{ $t('scan.btn-preview') }} <v-icon class="ml-2" :icon="mdiMagnify" /></v-btn>
-          <v-btn color="amber" class="ml-1 mb-1" @click="deletePreview">{{ $t('scan.btn-clear') }} <v-icon class="ml-2" :icon="mdiDelete" /></v-btn>
+          <v-btn color="amber" class="ml-1 mb-1" variant="tonal" @click="deletePreview">{{ $t('scan.btn-clear') }} <v-icon class="ml-2" :icon="mdiDelete" /></v-btn>
         </div>
       </v-col>
 
-      <v-col cols="12" md="auto" class="mb-10 mb-md-0" :style="{width: `${preview.width}px`}">
+      <v-col cols="12" md="auto" class="scan-preview mb-6 mb-md-0" order="1" order-md="2" :style="previewStyle">
         <cropper v-if="geometry" ref="cropper" :key="preview.key" class="cropper" :transition-time="10" :wheel-resize="false"
             :default-position="cropperDefaultPosition" :default-size="cropperDefaultSize"
             :src="img" @change="onCropperChange" />
         <v-img v-if="!geometry" :src="img" />
       </v-col>
 
-      <v-col cols="12" md="3" class="mb-10 mb-md-0">
+      <v-col cols="12" md="3" class="scan-adjustments mb-6 mb-md-0" order="3" order-md="3">
         <template v-if="geometry">
-          <v-text-field v-model="request.params.top" :label="$t('scan.top')" type="number" step="any" @blur="onCoordinatesChange" />
-          <v-text-field v-model="request.params.left" :label="$t('scan.left')" type="number" step="any" @blur="onCoordinatesChange" />
-          <v-text-field v-model="request.params.width" :label="$t('scan.width')" type="number" step="any" @blur="onCoordinatesChange" />
-          <v-text-field v-model="request.params.height" :label="$t('scan.height')" type="number" step="any" @blur="onCoordinatesChange" />
+          <div class="scan-coordinate-grid">
+            <v-text-field v-model="request.params.top" :label="$t('scan.top')" type="number" step="any" @blur="onCoordinatesChange" />
+            <v-text-field v-model="request.params.left" :label="$t('scan.left')" type="number" step="any" @blur="onCoordinatesChange" />
+            <v-text-field v-model="request.params.width" :label="$t('scan.width')" type="number" step="any" @blur="onCoordinatesChange" />
+            <v-text-field v-model="request.params.height" :label="$t('scan.height')" type="number" step="any" @blur="onCoordinatesChange" />
+          </div>
 
           <v-menu offset-y>
             <template #activator="{ props }">
@@ -127,6 +129,18 @@
       <v-spacer />
     </v-row>
 
+    <div v-if="smAndDown" class="scan-mobile-actions">
+      <v-btn color="blue" size="large" class="scan-mobile-primary" @click="scan(1)">
+        {{ $t('scan.btn-scan') }} <v-icon class="ml-2" :icon="mdiCamera" />
+      </v-btn>
+      <v-btn v-if="geometry" color="green" @click="createPreview">
+        {{ $t('scan.btn-preview') }} <v-icon class="ml-2" :icon="mdiMagnify" />
+      </v-btn>
+      <v-btn color="amber" variant="tonal" @click="deletePreview">
+        {{ $t('scan.btn-clear') }} <v-icon class="ml-2" :icon="mdiDelete" />
+      </v-btn>
+    </div>
+
     <batch-dialog ref="batchDialog" />
   </div>
 </template>
@@ -135,6 +149,7 @@
 import { mdiCamera, mdiDelete, mdiMagnify, mdiRefresh } from '@mdi/js';
 import { Cropper } from 'vue-advanced-cropper';
 import { useI18n } from 'vue-i18n';
+import { useDisplay } from 'vuetify';
 import BatchDialog from './BatchDialog.vue';
 
 import Common from '../classes/common';
@@ -168,11 +183,13 @@ export default {
 
   setup() {
     const { te } = useI18n();
+    const { smAndDown } = useDisplay();
     return {
       mdiCamera,
       mdiDelete,
       mdiMagnify,
       mdiRefresh,
+      smAndDown,
       te
     };
   },
@@ -208,6 +225,12 @@ export default {
   computed: {
     geometry() {
       return ['-x', '-y', '-l', '-t'].every(s => s in this.device.features);
+    },
+
+    previewStyle() {
+      return this.smAndDown
+        ? undefined
+        : { width: `${this.preview.width}px` };
     },
 
     deviceSize() {
@@ -352,6 +375,9 @@ export default {
         const availableHeight = window.innerHeight - appbarHeight;
         const desiredWidth = availableHeight * paperRatio;
         this.preview.width = Math.min(availableWidth / 2, desiredWidth);
+        this.preview.key += 1;
+      } else {
+        this.preview.width = window.innerWidth - 32;
         this.preview.key += 1;
       }
     },
@@ -791,5 +817,59 @@ export default {
   top: 0;
   left: 0;
   z-index: 10;
+}
+
+.scan-preview {
+  min-width: 0;
+}
+
+.scan-coordinate-grid {
+  display: grid;
+  gap: 0 12px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.scan-mobile-actions {
+  align-items: stretch;
+  background: rgb(var(--v-theme-surface));
+  border-top: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
+  bottom: 56px;
+  display: grid;
+  gap: 8px;
+  grid-template-columns: 1fr 1fr;
+  left: 0;
+  padding: 12px 16px calc(12px + env(safe-area-inset-bottom));
+  position: fixed;
+  right: 0;
+  z-index: 1000;
+}
+
+.scan-mobile-primary {
+  grid-column: 1 / -1;
+}
+
+@media (max-width: 959px) {
+  .scan-page {
+    padding-bottom: 136px;
+  }
+
+  .scan-settings,
+  .scan-adjustments {
+    background: rgb(var(--v-theme-surface));
+    border: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
+    border-radius: 12px;
+    padding: 16px;
+  }
+
+  .cropper,
+  .scan-preview :deep(.v-img) {
+    max-height: calc(100vh - 248px);
+  }
+}
+
+@media (min-width: 960px) {
+  .scan-mobile-actions {
+    display: none;
+  }
 }
 </style>

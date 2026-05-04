@@ -11,7 +11,7 @@
     <navigation :app-color="appColor" />
 
     <v-main>
-      <v-container fluid>
+      <v-container fluid class="app-container">
         <router-view v-slot="{ Component }" @mask="mask" @notify="notify">
           <transition name="fade" mode="out-in" :duration="150">
             <component :is="Component" />
@@ -139,5 +139,17 @@ input[type=number] {
   top: 0;
   left: 0;
   z-index: 10000;
+}
+</style>
+
+<style scoped>
+.app-container {
+  padding-bottom: 88px;
+}
+
+@media (min-width: 960px) {
+  .app-container {
+    padding-bottom: 16px;
+  }
 }
 </style>

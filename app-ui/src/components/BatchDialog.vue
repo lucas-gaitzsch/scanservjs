@@ -1,28 +1,39 @@
 <template>
-  <v-dialog v-model="show" aria-role="dialog" max-width="620" persistent aria-modal @keydown.stop="_onKeys">
-    <v-card>
-      <v-card-title>
+  <v-dialog v-model="show" aria-role="dialog" max-width="760" :fullscreen="smAndDown" persistent aria-modal @keydown.stop="_onKeys">
+    <v-card class="batch-dialog-card">
+      <v-card-title class="batch-dialog-title">
         {{ message }}
       </v-card-title>
-      <v-card-text>
-        <div class="d-flex flex-wrap flex-row-reverse">
-          <v-btn small color="primary" text @click.prevent="next">{{ $t('batch-dialog.btn-next') }}</v-btn>
-          <v-btn v-if="onFinish" small color="green" text @click.prevent="finish">{{ $t('batch-dialog.btn-finish') }}</v-btn>
-          <v-btn v-if="onRescan" small text @click.prevent="rescan">{{ $t('batch-dialog.btn-rescan') }}</v-btn>
-          <v-btn small text color="warning" @click.prevent="cancel">{{ $t('batch-dialog.btn-cancel') }}</v-btn>
+      <v-card-text class="batch-dialog-content">
+        <v-img v-if="image" class="batch-dialog-preview" :src="'data:image/jpeg;base64,' + image" contain />
+        <div v-if="!image" class="text-body-1 text-medium-emphasis">
+          {{ $t('scan.message:turn-documents') }}
         </div>
-        <v-img v-if="image" :src="'data:image/jpeg;base64,' + image" contain />
       </v-card-text>
-      <v-card-actions />
+      <v-card-actions class="batch-dialog-actions">
+        <v-btn color="warning" variant="tonal" @click.prevent="cancel">{{ $t('batch-dialog.btn-cancel') }}</v-btn>
+        <v-btn v-if="onRescan" variant="tonal" @click.prevent="rescan">{{ $t('batch-dialog.btn-rescan') }}</v-btn>
+        <v-spacer v-if="!smAndDown" />
+        <v-btn v-if="onFinish" color="green" variant="tonal" @click.prevent="finish">{{ $t('batch-dialog.btn-finish') }}</v-btn>
+        <v-btn color="primary" size="large" @click.prevent="next">{{ $t('batch-dialog.btn-next') }}</v-btn>
+      </v-card-actions>
     </v-card>
   </v-dialog>
 </template>
 
 <script>
 import Constants from '../classes/constants';
+import { useDisplay } from 'vuetify';
 
 export default {
   name: 'BatchDialog',
+  setup() {
+    const { smAndDown } = useDisplay();
+    return {
+      smAndDown
+    };
+  },
+
   data() {
     return {
       message: null,
@@ -82,3 +93,47 @@ export default {
   }
 };
 </script>
+
+<style scoped>
+.batch-dialog-card {
+  display: flex;
+  flex-direction: column;
+  max-height: 100%;
+}
+
+.batch-dialog-title {
+  white-space: normal;
+}
+
+.batch-dialog-content {
+  flex: 1 1 auto;
+  overflow: auto;
+}
+
+.batch-dialog-preview {
+  max-height: 58vh;
+}
+
+.batch-dialog-actions {
+  border-top: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+@media (max-width: 959px) {
+  .batch-dialog-preview {
+    max-height: calc(100vh - 240px);
+  }
+
+  .batch-dialog-actions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    padding: 12px 16px calc(12px + env(safe-area-inset-bottom));
+  }
+
+  .batch-dialog-actions .v-btn:last-child {
+    grid-column: 1 / -1;
+    order: -1;
+  }
+}
+</style>
