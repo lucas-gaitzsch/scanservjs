@@ -40,9 +40,9 @@ describe('ScanJobManager', () => {
     assert.throws(() => manager.create(request), /already active/);
   });
 
-  it('Recovers running jobs as failed', () => {
+  it('Recovers running automatic jobs as failed', () => {
     let manager = new ScanJobManager(config);
-    const job = manager.store.create(request);
+    const job = manager.store.create(Object.assign({}, request, { batch: 'auto' }));
     job.status = 'scanning';
     manager.store.save(job);
 
@@ -50,6 +50,20 @@ describe('ScanJobManager', () => {
     const recovered = manager.get(job.id);
     assert.strictEqual(recovered.status, 'failed');
     assert.strictEqual(recovered.error.includes('Server restarted'), true);
+  });
+
+  it('Recovers running manual jobs as waiting', () => {
+    let manager = new ScanJobManager(config);
+    const job = manager.store.create(request);
+    job.status = 'scanning';
+    job.error = 'in progress';
+    manager.store.save(job);
+
+    manager = new ScanJobManager(config);
+    const recovered = manager.get(job.id);
+    assert.strictEqual(recovered.status, 'waiting');
+    assert.strictEqual(recovered.error, null);
+    assert.strictEqual(manager.listActive().some(active => active.id === job.id), true);
   });
 
   it('Scans and rescans manual pages through ScanController', async () => {

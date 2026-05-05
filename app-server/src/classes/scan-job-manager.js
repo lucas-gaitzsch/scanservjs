@@ -25,8 +25,13 @@ module.exports = class ScanJobManager {
   recover() {
     this.store.list().forEach(job => {
       if (['scanning', 'processing'].includes(job.status)) {
-        job.status = 'failed';
-        job.error = 'Server restarted while the scan job was running';
+        if (job.batch === Constants.BATCH_MANUAL) {
+          job.status = 'waiting';
+          job.error = null;
+        } else {
+          job.status = 'failed';
+          job.error = 'Server restarted while the scan job was running';
+        }
         this.store.save(job);
       }
     });

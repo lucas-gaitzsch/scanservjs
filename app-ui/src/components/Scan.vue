@@ -218,6 +218,7 @@ export default {
       },
       job: {
         pollTimer: 0,
+        reconnecting: false,
         status: null
       }
     };
@@ -541,24 +542,38 @@ export default {
     },
 
     async reconnectJob() {
-      if (storage.activeJobId) {
-        try {
-          const job = await this.fetchJob(storage.activeJobId);
-          if (['created', 'waiting', 'scanning', 'processing'].includes(job.status)) {
-            if (window.confirm(`${this.$t('scan.btn-scan')}: continue active scan job?`)) {
-              this.handleJob(job, true);
-            } else {
-              this.cancelJob(job.id);
-            }
-          } else if (['completed', 'failed', 'cancelled', 'expired'].includes(job.status)) {
-            this.handleJob(job, true);
-          }
-        } catch (error) {
-          storage.activeJobId = null;
-        }
+      if (this.job.reconnecting) {
         return;
       }
 
+      this.job.reconnecting = true;
+      try {
+        if (storage.activeJobId) {
+          try {
+            const job = await this.fetchJob(storage.activeJobId);
+            if (['created', 'waiting', 'scanning', 'processing'].includes(job.status)) {
+              if (window.confirm(`${this.$t('scan.btn-scan')}: continue active scan job?`)) {
+                this.handleJob(job, true);
+              } else {
+                this.cancelJob(job.id);
+              }
+            } else if (['completed', 'failed', 'cancelled', 'expired'].includes(job.status)) {
+              this.handleJob(job, true);
+            }
+          } catch (error) {
+            storage.activeJobId = null;
+            await this.reconnectActiveJob();
+          }
+          return;
+        }
+
+        await this.reconnectActiveJob();
+      } finally {
+        this.job.reconnecting = false;
+      }
+    },
+
+    async reconnectActiveJob() {
       try {
         const jobs = await Common.fetch('api/v1/scan/jobs?active=true', {
           cache: 'no-store',
