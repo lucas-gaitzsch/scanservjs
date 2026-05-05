@@ -213,6 +213,7 @@ export default {
       preview: {
         timer: 0,
         width: 400,
+        lastWindowWidth: 0,
         key: 0
       },
       job: {
@@ -349,19 +350,22 @@ export default {
       this.readPreview();
       this.reconnectJob();
     });
-    window.addEventListener('resize', () => {
-      clearTimeout(this.preview.timer);
-      this.preview.timer = setTimeout(this._resizePreview, 100);
-    });
+    window.addEventListener('resize', this._onResizePreview);
     window.addEventListener('pageshow', this.reconnectJob);
   },
 
   beforeUnmount() {
     this.stopPollingJob();
+    window.removeEventListener('resize', this._onResizePreview);
     window.removeEventListener('pageshow', this.reconnectJob);
   },
 
   methods: {
+    _onResizePreview() {
+      clearTimeout(this.preview.timer);
+      this.preview.timer = setTimeout(this._resizePreview, 100);
+    },
+
     _resizePreview() {
       const paperRatio = this.geometry
         ? this.deviceSize.width / this.deviceSize.height
@@ -377,8 +381,12 @@ export default {
         this.preview.width = Math.min(availableWidth / 2, desiredWidth);
         this.preview.key += 1;
       } else {
-        this.preview.width = window.innerWidth - 32;
-        this.preview.key += 1;
+        const availableWidth = window.innerWidth - 32;
+        if (Math.abs(window.innerWidth - this.preview.lastWindowWidth) < 24) {
+          return;
+        }
+        this.preview.lastWindowWidth = window.innerWidth;
+        this.preview.width = availableWidth;
       }
     },
 
