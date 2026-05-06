@@ -79,26 +79,27 @@
 
       <v-col cols="12" md="3" class="scan-adjustments mb-6 mb-md-0" order="3" order-md="3">
         <template v-if="geometry">
-          <div class="scan-coordinate-grid">
-            <v-text-field v-model="request.params.top" :label="$t('scan.top')" type="number" step="any" @blur="onCoordinatesChange" />
-            <v-text-field v-model="request.params.left" :label="$t('scan.left')" type="number" step="any" @blur="onCoordinatesChange" />
-            <v-text-field v-model="request.params.width" :label="$t('scan.width')" type="number" step="any" @blur="onCoordinatesChange" />
-            <v-text-field v-model="request.params.height" :label="$t('scan.height')" type="number" step="any" @blur="onCoordinatesChange" />
-          </div>
+          <div class="scan-paper-panel">
+            <v-select
+              class="scan-paper-size-select"
+              :model-value="selectedPaperSize"
+              :label="$t('scan.paperSize')"
+              :no-data-text="$t('global.no-data-text')"
+              :items="paperSizes"
+              item-title="name"
+              return-object
+              density="compact"
+              variant="solo-filled"
+              hide-details
+              @update:model-value="updatePaperSize" />
 
-          <v-menu offset-y>
-            <template #activator="{ props }">
-              <v-btn color="primary" class="mb-4" v-bind="props">{{ $t('scan.paperSize') }}</v-btn>
-            </template>
-            <v-list dense>
-              <v-list-item
-                v-for="(item, index) in paperSizes"
-                :key="index"
-                @click="updatePaperSize(item)">
-                <v-list-item-title>{{ item.name }}</v-list-item-title>
-              </v-list-item>
-            </v-list>
-          </v-menu>
+            <div class="scan-coordinate-grid">
+              <v-text-field v-model="request.params.top" :label="$t('scan.top')" type="number" step="any" suffix="mm" density="compact" variant="outlined" hide-details @blur="onCoordinatesChange" />
+              <v-text-field v-model="request.params.left" :label="$t('scan.left')" type="number" step="any" suffix="mm" density="compact" variant="outlined" hide-details @blur="onCoordinatesChange" />
+              <v-text-field v-model="request.params.width" :label="$t('scan.width')" type="number" step="any" suffix="mm" density="compact" variant="outlined" hide-details @blur="onCoordinatesChange" />
+              <v-text-field v-model="request.params.height" :label="$t('scan.height')" type="number" step="any" suffix="mm" density="compact" variant="outlined" hide-details @blur="onCoordinatesChange" />
+            </div>
+          </div>
         </template>
 
         <template v-if="'--brightness' in device.features">
@@ -305,6 +306,16 @@ export default {
           });
           return paper;
         });
+    },
+
+    selectedPaperSize() {
+      const width = Number(this.request.params.width);
+      const height = Number(this.request.params.height);
+      const selected = this.paperSizes.find(paper => paper.dimensions.x === width && paper.dimensions.y === height);
+      return selected || {
+        name: `${width} × ${height} mm`,
+        dimensions: { x: width, y: height }
+      };
     },
 
     pipelines() {
@@ -846,9 +857,21 @@ export default {
   min-width: 0;
 }
 
+.scan-paper-panel {
+  background: rgba(var(--v-theme-primary), 0.06);
+  border: 1px solid rgba(var(--v-theme-primary), 0.18);
+  border-radius: 14px;
+  margin-bottom: 20px;
+  padding: 12px;
+}
+
+.scan-paper-size-select {
+  margin-bottom: 12px;
+}
+
 .scan-coordinate-grid {
   display: grid;
-  gap: 0 12px;
+  gap: 10px;
   grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 

@@ -11,11 +11,10 @@
         </div>
       </v-card-text>
       <v-card-actions class="batch-dialog-actions">
-        <v-btn color="warning" variant="tonal" @click.prevent="cancel">{{ $t('batch-dialog.btn-cancel') }}</v-btn>
-        <v-btn v-if="onRescan" variant="tonal" @click.prevent="rescan">{{ $t('batch-dialog.btn-rescan') }}</v-btn>
-        <v-spacer v-if="!smAndDown" />
-        <v-btn v-if="onFinish" color="green" variant="tonal" @click.prevent="finish">{{ $t('batch-dialog.btn-finish') }}</v-btn>
-        <v-btn color="primary" size="large" @click.prevent="next">{{ $t('batch-dialog.btn-next') }}</v-btn>
+        <v-btn v-if="onRescan" class="batch-dialog-rescan" variant="tonal" @click.prevent="rescan">{{ $t('batch-dialog.btn-rescan') }}</v-btn>
+        <v-btn class="batch-dialog-next" color="primary" size="large" @click.prevent="next">{{ $t('batch-dialog.btn-next') }}</v-btn>
+        <v-btn v-if="onFinish" class="batch-dialog-finish" color="green" variant="tonal" @click.prevent="finish">{{ $t('batch-dialog.btn-finish') }}</v-btn>
+        <v-btn class="batch-dialog-cancel" color="warning" variant="tonal" @click.prevent="cancel">{{ $t('batch-dialog.btn-cancel') }}</v-btn>
       </v-card-actions>
     </v-card>
   </v-dialog>
@@ -118,6 +117,7 @@ export default {
   border-top: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
   flex-wrap: wrap;
   gap: 8px;
+  justify-content: flex-end;
 }
 
 @media (max-width: 959px) {
@@ -131,9 +131,24 @@ export default {
     padding: 12px 16px calc(12px + env(safe-area-inset-bottom));
   }
 
-  .batch-dialog-actions .v-btn:last-child {
-    grid-column: 1 / -1;
-    order: -1;
+  .batch-dialog-actions .v-btn {
+    min-width: 0;
+  }
+
+  .batch-dialog-rescan {
+    order: 1;
+  }
+
+  .batch-dialog-next {
+    order: 2;
+  }
+
+  .batch-dialog-finish {
+    order: 3;
+  }
+
+  .batch-dialog-cancel {
+    order: 4;
   }
 }
 </style>

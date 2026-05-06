@@ -42,7 +42,7 @@
    "batch-dialog":{
       "btn-cancel":"Скасувати",
       "btn-finish":"Готово",
-      "btn-rescan":"Пересканувати",
+      "btn-rescan":"Сканувати знову",
       "btn-next":"Далі"
    },
    "files":{

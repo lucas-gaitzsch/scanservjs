@@ -42,7 +42,7 @@
   "batch-dialog": {
     "btn-cancel": "Annuler",
     "btn-finish": "Terminer",
-    "btn-rescan": "Re-numériser page",
+    "btn-rescan": "Renumériser",
     "btn-next": "Suivant"
   },
 

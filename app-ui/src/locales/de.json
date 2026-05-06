@@ -42,8 +42,8 @@
   "batch-dialog": {
     "btn-cancel": "Abbrechen",
     "btn-finish": "Fertig",
-    "btn-rescan": "Seite erneut scannen",
-    "btn-next": "Nächste Seite scannen"
+    "btn-rescan": "Erneut scannen",
+    "btn-next": "Nächste Seite"
   },
 
   "files": {

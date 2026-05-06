@@ -28,14 +28,20 @@ function sendError(res, code, data) {
   let content = {
     message: ''
   };
+  let statusCode = code;
   log.error(data);
   if (typeof data === 'object') {
     content.message = data.message || JSON.stringify(data);
     content.code = data.code || -1;
+    if (data.code === 'ENOENT') {
+      statusCode = 404;
+    } else if (typeof data.code === 'number') {
+      statusCode = data.code;
+    }
   } else if (typeof data === 'string') {
     content.message = data;
   }
-  res.status(data.code || code).send(content);
+  res.status(statusCode).send(content);
 }
 
 /**
