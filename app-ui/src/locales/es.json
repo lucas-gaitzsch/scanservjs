@@ -132,7 +132,8 @@
     "junior-legal": "Junior legal (127 × 203 mm)",
     "half-letter": "Half letter (140 × 216 mm)",
     "portrait": "Retrato",
-    "landscape": "Apaisado"
+    "landscape": "Apaisado",
+    "custom": "Custom"
   },
 
   "scan": {

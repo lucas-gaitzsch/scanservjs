@@ -85,15 +85,15 @@
               :model-value="selectedPaperSize"
               :label="$t('scan.paperSize')"
               :no-data-text="$t('global.no-data-text')"
-              :items="paperSizes"
+              :items="paperSizeOptions"
               item-title="name"
-              return-object
+              item-value="value"
               density="compact"
               variant="solo-filled"
               hide-details
               @update:model-value="updatePaperSize" />
 
-            <div class="scan-coordinate-grid">
+            <div v-if="isCustomPaperSize" class="scan-coordinate-grid">
               <v-text-field v-model="request.params.top" :label="$t('scan.top')" type="number" step="any" suffix="mm" density="compact" variant="outlined" hide-details @blur="onCoordinatesChange" />
               <v-text-field v-model="request.params.left" :label="$t('scan.left')" type="number" step="any" suffix="mm" density="compact" variant="outlined" hide-details @blur="onCoordinatesChange" />
               <v-text-field v-model="request.params.width" :label="$t('scan.width')" type="number" step="any" suffix="mm" density="compact" variant="outlined" hide-details @blur="onCoordinatesChange" />
@@ -161,6 +161,7 @@ import Storage from '../classes/storage';
 import 'vue-advanced-cropper/dist/style.css';
 
 const storage = Storage.instance();
+const CUSTOM_PAPER_SIZE = '__custom__';
 
 function round(n, dp) {
   const f = Math.pow(10, dp || 0);
@@ -217,6 +218,7 @@ export default {
         lastWindowWidth: 0,
         key: 0
       },
+      paperSizeSelection: null,
       job: {
         pollTimer: 0,
         reconnecting: false,
@@ -289,7 +291,7 @@ export default {
 
     paperSizes() {
       if (!this.geometry) {
-        return undefined;
+        return [];
       }
 
       const deviceSize = {
@@ -308,14 +310,37 @@ export default {
         });
     },
 
+    paperSizeOptions() {
+      return this.paperSizes
+        .map(paper => ({
+          ...paper,
+          value: `${paper.dimensions.x}x${paper.dimensions.y}`
+        }))
+        .concat({
+          name: this.$t('paper-size.custom'),
+          value: CUSTOM_PAPER_SIZE
+        });
+    },
+
     selectedPaperSize() {
+      if (this.paperSizeSelection) {
+        return this.paperSizeSelection;
+      }
+
+      return this.matchingPaperSizeValue || CUSTOM_PAPER_SIZE;
+    },
+
+    isCustomPaperSize() {
+      return this.selectedPaperSize === CUSTOM_PAPER_SIZE;
+    },
+
+    matchingPaperSizeValue() {
       const width = Number(this.request.params.width);
       const height = Number(this.request.params.height);
-      const selected = this.paperSizes.find(paper => paper.dimensions.x === width && paper.dimensions.y === height);
-      return selected || {
-        name: `${width} × ${height} mm`,
-        dimensions: { x: width, y: height }
-      };
+      const selected = this.paperSizeOptions.find(paper => paper.dimensions
+        && paper.dimensions.x === width
+        && paper.dimensions.y === height);
+      return selected ? selected.value : null;
     },
 
     pipelines() {
@@ -759,6 +784,7 @@ export default {
           this.context = context;
           this.device = context.devices[0];
           this.request = this.buildRequest();
+          this.initialisePaperSizeSelection();
           for (let test of context.diagnostics) {
             if (!test.success) {
               this.notify({ type: 'e', message: test.message });
@@ -806,6 +832,7 @@ export default {
     clear() {
       storage.request = null;
       this.request = this.buildRequest();
+      this.initialisePaperSizeSelection();
     },
 
     scan() {
@@ -832,11 +859,22 @@ export default {
     },
 
     updatePaperSize(value) {
-      if (value.dimensions) {
-        this.request.params.width = value.dimensions.x;
-        this.request.params.height = value.dimensions.y;
+      if (value === CUSTOM_PAPER_SIZE) {
+        this.paperSizeSelection = CUSTOM_PAPER_SIZE;
+        return;
+      }
+
+      const paperSize = this.paperSizeOptions.find(paper => paper.value === value);
+      if (paperSize && paperSize.dimensions) {
+        this.paperSizeSelection = value;
+        this.request.params.width = paperSize.dimensions.x;
+        this.request.params.height = paperSize.dimensions.y;
         this.onCoordinatesChange();
       }
+    },
+
+    initialisePaperSizeSelection() {
+      this.paperSizeSelection = this.matchingPaperSizeValue || CUSTOM_PAPER_SIZE;
     }
   }
 };

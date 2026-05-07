@@ -144,7 +144,8 @@
     "junior-legal": "##JUNIOR-LEGAL",
     "half-letter": "##HALF-LETTER",
     "portrait": "##PORTRAIT",
-    "landscape": "##LANDSCAPE"
+    "landscape": "##LANDSCAPE",
+    "custom": "##CUSTOM"
   },
 
   "scan": {
