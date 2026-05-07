@@ -37,10 +37,12 @@ const vuetify = createVuetify({
       variant: 'tonal',
     },
     VSelect: {
-      variant: 'plain',
+      density: 'comfortable',
+      variant: 'outlined',
     },
     VTextField: {
-      variant: 'plain',
+      density: 'comfortable',
+      variant: 'outlined',
     }
   },
   icons: {

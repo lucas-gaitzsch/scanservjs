@@ -1,52 +1,85 @@
 <template>
   <div class="scan-page">
-    <v-row>
-      <v-spacer />
+    <aside class="scan-panel scan-settings">
+      <div class="scan-panel-header">
+        <span class="scan-kicker">{{ $t('navigation.scan') }}</span>
+        <h1>{{ $t('scan.btn-scan') }}</h1>
+      </div>
 
-      <v-col cols="12" md="3" class="scan-settings mb-6 mb-md-0" order="2" order-md="1">
-        <div class="d-flex">
+      <div class="scan-control-group">
+        <div class="scan-group-title">{{ $t('scan.device') }}</div>
+        <div class="scan-device-row">
           <v-select v-if="context.devices.length > 0"
             v-model="device"
-            style="min-width: 0px;"
+            class="scan-device-select"
+            density="comfortable"
+            hide-details
+            variant="outlined"
             :label="$t('scan.device')"
             :items="context.devices" return-object item-title="name" @update:model-value="clear" />
-          <v-btn small class="ml-2 mt-4 pl-1 pr-1" min-width="32" @click="deviceRefresh"><v-icon :icon="mdiRefresh" /></v-btn>
+          <v-btn class="scan-refresh" min-width="44" size="large" variant="tonal" @click="deviceRefresh"><v-icon :icon="mdiRefresh" /></v-btn>
         </div>
+      </div>
 
+      <div class="scan-control-group">
+        <div class="scan-group-title">{{ $t('scan.source') }}</div>
         <v-select v-if="'--source' in device.features"
           v-model="request.params.source"
+          density="comfortable"
+          hide-details
+          variant="outlined"
           :no-data-text="$t('global.no-data-text')" :label="$t('scan.source')"
           :items="sources" item-value="value" item-title="text" />
 
         <v-select v-if="'--adf-mode' in device.features"
           v-model="request.params.adfMode"
+          density="comfortable"
+          hide-details
+          variant="outlined"
           :no-data-text="$t('global.no-data-text')" :label="$t('scan.adf-mode')"
           :items="adfModes" item-value="value" item-title="text" />
 
         <v-select
           v-model="request.params.resolution"
+          density="comfortable"
+          hide-details
+          variant="outlined"
           :no-data-text="$t('global.no-data-text')" :label="$t('scan.resolution')"
           :items="device.features['--resolution']['options']" />
 
         <v-select v-if="'--mode' in device.features"
           v-model="request.params.mode"
+          density="comfortable"
+          hide-details
+          variant="outlined"
           :no-data-text="$t('global.no-data-text')" :label="$t('scan.mode')"
           :items="modes" item-value="value" item-title="text" />
 
         <v-select v-if="'--disable-dynamic-lineart' in device.features"
           v-model="request.params.mode"
+          density="comfortable"
+          hide-details
+          variant="outlined"
           :label="$t('scan.dynamic-lineart')"
           :items="[
             { value: false, text: $t('scan.dynamic-lineart:disabled') },
             { value: true, text: $t('scan.dynamic-lineart:enabled') }]"
           item-value="value" item-title="text" />
+      </div>
 
+      <div class="scan-control-group">
+        <div class="scan-group-title">{{ $t('scan.format') }}</div>
         <v-select v-model="request.batch" :label="$t('scan.batch')"
+          density="comfortable"
+          hide-details
+          variant="outlined"
           :no-data-text="$t('global.no-data-text')"
           :items="batchModes" item-value="value" item-title="text" />
 
         <v-select
           v-model="request.filters"
+          density="comfortable"
+          variant="outlined"
           :no-data-text="$t('global.no-data-text')"
           :items="filters"
           item-title="text"
@@ -57,27 +90,49 @@
 
         <v-select
           v-model="request.pipeline"
+          density="comfortable"
+          hide-details
+          variant="outlined"
           :no-data-text="$t('global.no-data-text')"
           :label="$t('scan.format')"
           :items="pipelines"
           item-title="text"
           item-value="value" />
+      </div>
 
-        <div v-if="!smAndDown" class="d-flex flex-row-reverse flex-wrap">
-          <v-btn color="blue" class="ml-1 mb-1" size="large" @click="scan(1)">{{ $t('scan.btn-scan') }} <v-icon class="ml-2" :icon="mdiCamera" /></v-btn>
-          <v-btn v-if="geometry" color="green" class="ml-1 mb-1" @click="createPreview">{{ $t('scan.btn-preview') }} <v-icon class="ml-2" :icon="mdiMagnify" /></v-btn>
-          <v-btn color="amber" class="ml-1 mb-1" variant="tonal" @click="deletePreview">{{ $t('scan.btn-clear') }} <v-icon class="ml-2" :icon="mdiDelete" /></v-btn>
+      <div v-if="!smAndDown" class="scan-actions scan-actions-desktop">
+        <v-btn color="primary" size="large" @click="scan(1)">{{ $t('scan.btn-scan') }} <v-icon class="ml-2" :icon="mdiCamera" /></v-btn>
+        <v-btn v-if="geometry" color="success" @click="createPreview">{{ $t('scan.btn-preview') }} <v-icon class="ml-2" :icon="mdiMagnify" /></v-btn>
+        <v-btn color="warning" variant="tonal" @click="deletePreview">{{ $t('scan.btn-clear') }} <v-icon class="ml-2" :icon="mdiDelete" /></v-btn>
+      </div>
+    </aside>
+
+    <main class="scan-preview" :style="previewStyle">
+      <div class="scan-preview-card">
+        <div class="scan-preview-header">
+          <div>
+            <span class="scan-kicker">{{ $t('scan.btn-preview') }}</span>
+            <strong>{{ selectedPaperSizeLabel }}</strong>
+          </div>
         </div>
-      </v-col>
+        <div class="scan-preview-canvas">
+          <cropper v-if="geometry" ref="cropper" :key="preview.key" class="cropper" :transition-time="10" :wheel-resize="false"
+              :default-position="cropperDefaultPosition" :default-size="cropperDefaultSize"
+              :src="img" @change="onCropperChange" />
+          <v-img v-else-if="img" :src="img" />
+          <div v-else class="scan-preview-empty">
+            {{ $t('global.no-data-text') }}
+          </div>
+        </div>
+      </div>
+    </main>
 
-      <v-col cols="12" md="auto" class="scan-preview mb-6 mb-md-0" order="1" order-md="2" :style="previewStyle">
-        <cropper v-if="geometry" ref="cropper" :key="preview.key" class="cropper" :transition-time="10" :wheel-resize="false"
-            :default-position="cropperDefaultPosition" :default-size="cropperDefaultSize"
-            :src="img" @change="onCropperChange" />
-        <v-img v-if="!geometry" :src="img" />
-      </v-col>
+    <aside class="scan-panel scan-adjustments">
+      <div class="scan-panel-header scan-panel-header-compact">
+        <span class="scan-kicker">{{ $t('scan.paperSize') }}</span>
+      </div>
 
-      <v-col cols="12" md="3" class="scan-adjustments mb-6 mb-md-0" order="3" order-md="3">
+      <div class="scan-control-group">
         <template v-if="geometry">
           <div class="scan-paper-panel">
             <v-select
@@ -101,7 +156,9 @@
             </div>
           </div>
         </template>
+      </div>
 
+      <div class="scan-control-group scan-slider-group">
         <template v-if="'--brightness' in device.features">
           <v-slider v-model="request.params.brightness" class="align-center ml-0"
             :step="device.features['--brightness']['interval']"
@@ -125,19 +182,17 @@
             </template>
           </v-slider>
         </div>
-      </v-col>
-      
-      <v-spacer />
-    </v-row>
+      </div>
+    </aside>
 
     <div v-if="smAndDown" class="scan-mobile-actions">
-      <v-btn color="blue" size="large" class="scan-mobile-primary" @click="scan(1)">
+      <v-btn color="primary" size="large" class="scan-mobile-primary" @click="scan(1)">
         {{ $t('scan.btn-scan') }} <v-icon class="ml-2" :icon="mdiCamera" />
       </v-btn>
-      <v-btn v-if="geometry" color="green" @click="createPreview">
+      <v-btn v-if="geometry" color="success" @click="createPreview">
         {{ $t('scan.btn-preview') }} <v-icon class="ml-2" :icon="mdiMagnify" />
       </v-btn>
-      <v-btn color="amber" variant="tonal" @click="deletePreview">
+      <v-btn color="warning" variant="tonal" @click="deletePreview">
         {{ $t('scan.btn-clear') }} <v-icon class="ml-2" :icon="mdiDelete" />
       </v-btn>
     </div>
@@ -334,6 +389,11 @@ export default {
       return this.selectedPaperSize === CUSTOM_PAPER_SIZE;
     },
 
+    selectedPaperSizeLabel() {
+      const selected = this.paperSizeOptions.find(paper => paper.value === this.selectedPaperSize);
+      return selected ? selected.name : this.$t('scan.paperSize');
+    },
+
     matchingPaperSizeValue() {
       const width = Number(this.request.params.width);
       const height = Number(this.request.params.height);
@@ -411,11 +471,12 @@ export default {
       // This only makes a difference when the col-width="auto" - so md+
       const mdBreakpoint = 960;
       if (window.innerWidth >= mdBreakpoint) {
-        const appbarHeight = 80;
-        const availableWidth = window.innerWidth - 30;
+        const appbarHeight = 112;
+        const sidePanelsWidth = window.innerWidth >= 1280 ? 744 : 384;
+        const availableWidth = window.innerWidth - sidePanelsWidth - 64;
         const availableHeight = window.innerHeight - appbarHeight;
         const desiredWidth = availableHeight * paperRatio;
-        this.preview.width = Math.min(availableWidth / 2, desiredWidth);
+        this.preview.width = Math.max(320, Math.min(availableWidth, desiredWidth));
         this.preview.key += 1;
       } else {
         const availableWidth = window.innerWidth - 32;
@@ -881,26 +942,153 @@ export default {
 </script>
 
 <style scoped>
-#mask {
-  position: fixed;
-  width: 100%;
-  height: 100%;
-  background: rgba(0,0,0,.4);
-  top: 0;
-  left: 0;
-  z-index: 10;
+.scan-page {
+  display: grid;
+  gap: 20px;
+  margin: 0 auto;
+  max-width: 1440px;
+  padding: 8px 0 156px;
 }
 
-.scan-preview {
+.scan-panel,
+.scan-preview-card {
+  background: rgb(var(--v-theme-surface));
+  border: 1px solid rgba(var(--v-border-color), 0.14);
+  border-radius: 18px;
+  box-shadow: 0 12px 34px rgba(15, 23, 42, 0.06);
+}
+
+.scan-panel {
+  align-self: start;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  padding: 20px;
+}
+
+.scan-panel-header {
+  border-bottom: 1px solid rgba(var(--v-border-color), 0.12);
+  padding-bottom: 14px;
+}
+
+.scan-panel-header h1 {
+  font-size: 1.8rem;
+  font-weight: 650;
+  letter-spacing: -0.04em;
+  line-height: 1.1;
+  margin: 2px 0 0;
+}
+
+.scan-panel-header-compact {
+  padding-bottom: 10px;
+}
+
+.scan-kicker,
+.scan-group-title {
+  color: rgba(var(--v-theme-on-surface), 0.62);
+  display: block;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.scan-control-group {
+  display: grid;
+  gap: 12px;
+}
+
+.scan-device-row {
+  align-items: stretch;
+  display: grid;
+  gap: 10px;
+  grid-template-columns: minmax(0, 1fr) auto;
+}
+
+.scan-device-select {
   min-width: 0;
 }
 
+.scan-refresh {
+  height: 48px;
+}
+
+.scan-actions {
+  border-top: 1px solid rgba(var(--v-border-color), 0.12);
+  display: grid;
+  gap: 10px;
+  padding-top: 16px;
+}
+
+.scan-actions :deep(.v-btn) {
+  justify-content: center;
+}
+
+.scan-preview {
+  align-self: start;
+  min-width: 0;
+  width: 100%;
+}
+
+.scan-preview-card {
+  overflow: hidden;
+}
+
+.scan-preview-header {
+  align-items: center;
+  border-bottom: 1px solid rgba(var(--v-border-color), 0.12);
+  display: flex;
+  justify-content: space-between;
+  min-height: 68px;
+  padding: 16px 18px;
+}
+
+.scan-preview-header strong {
+  display: block;
+  font-size: 1.05rem;
+  font-weight: 650;
+  margin-top: 2px;
+}
+
+.scan-preview-canvas {
+  background:
+    linear-gradient(45deg, rgba(var(--v-theme-on-surface), 0.025) 25%, transparent 25%),
+    linear-gradient(-45deg, rgba(var(--v-theme-on-surface), 0.025) 25%, transparent 25%),
+    linear-gradient(45deg, transparent 75%, rgba(var(--v-theme-on-surface), 0.025) 75%),
+    linear-gradient(-45deg, transparent 75%, rgba(var(--v-theme-on-surface), 0.025) 75%);
+  background-color: rgba(var(--v-theme-on-surface), 0.018);
+  background-position: 0 0, 0 8px, 8px -8px, -8px 0;
+  background-size: 16px 16px;
+  min-height: 360px;
+  overflow: auto;
+  padding: 18px;
+}
+
+.cropper,
+.scan-preview :deep(.v-img) {
+  background: #fff;
+  border-radius: 8px;
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.12);
+  overflow: hidden;
+}
+
+.scan-preview-empty {
+  align-items: center;
+  background: rgba(var(--v-theme-surface), 0.86);
+  border: 1px dashed rgba(var(--v-border-color), 0.32);
+  border-radius: 12px;
+  color: rgba(var(--v-theme-on-surface), 0.58);
+  display: flex;
+  justify-content: center;
+  min-height: 320px;
+  padding: 24px;
+}
+
 .scan-paper-panel {
-  background: rgba(var(--v-theme-primary), 0.06);
-  border: 1px solid rgba(var(--v-theme-primary), 0.18);
-  border-radius: 14px;
-  margin-bottom: 20px;
-  padding: 12px;
+  background: rgba(var(--v-theme-primary), 0.045);
+  border: 1px solid rgba(var(--v-theme-primary), 0.16);
+  border-radius: 16px;
+  padding: 14px;
 }
 
 .scan-paper-size-select {
@@ -913,13 +1101,27 @@ export default {
   grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
+.scan-slider-group {
+  gap: 16px;
+}
+
+.scan-slider-group :deep(.v-input__details) {
+  display: none;
+}
+
+.scan-slider-group :deep(.v-field) {
+  background: rgb(var(--v-theme-surface));
+}
+
 .scan-mobile-actions {
   align-items: stretch;
-  background: rgb(var(--v-theme-surface));
-  border-top: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
+  backdrop-filter: blur(14px);
+  background: rgba(var(--v-theme-surface), 0.94);
+  border-top: 1px solid rgba(var(--v-border-color), 0.16);
   bottom: 56px;
+  box-shadow: 0 -12px 30px rgba(15, 23, 42, 0.08);
   display: grid;
-  gap: 8px;
+  gap: 10px;
   grid-template-columns: 1fr 1fr;
   left: 0;
   padding: 12px 16px calc(12px + env(safe-area-inset-bottom));
@@ -933,27 +1135,50 @@ export default {
 }
 
 @media (max-width: 959px) {
-  .scan-page {
-    padding-bottom: 136px;
+  .scan-preview {
+    order: -1;
+    width: 100% !important;
   }
 
-  .scan-settings,
-  .scan-adjustments {
-    background: rgb(var(--v-theme-surface));
-    border: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
-    border-radius: 12px;
-    padding: 16px;
+  .scan-panel,
+  .scan-preview-card {
+    border-radius: 16px;
+  }
+
+  .scan-preview-canvas {
+    min-height: 280px;
+    padding: 12px;
   }
 
   .cropper,
   .scan-preview :deep(.v-img) {
-    max-height: calc(100vh - 248px);
+    max-height: calc(100vh - 270px);
   }
 }
 
 @media (min-width: 960px) {
+  .scan-page {
+    grid-template-columns: minmax(300px, 360px) minmax(320px, auto);
+    justify-content: center;
+    padding: 18px 0 32px;
+  }
+
+  .scan-adjustments {
+    grid-column: 1 / -1;
+  }
+
   .scan-mobile-actions {
     display: none;
+  }
+}
+
+@media (min-width: 1280px) {
+  .scan-page {
+    grid-template-columns: minmax(300px, 360px) minmax(320px, auto) minmax(300px, 360px);
+  }
+
+  .scan-adjustments {
+    grid-column: auto;
   }
 }
 </style>

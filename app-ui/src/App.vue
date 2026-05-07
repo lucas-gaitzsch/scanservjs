@@ -2,7 +2,7 @@
   <v-app>
     <transition name="fade">
       <div v-if="maskRef" id="mask">
-        <div style="position: absolute; top: 49%; left: 49%">
+        <div>
           <v-progress-circular indeterminate color="primary" />
         </div>
       </div>
@@ -132,24 +132,30 @@ input[type=number] {
 }
 
 #mask {
+  align-items: center;
+  backdrop-filter: blur(2px);
   position: fixed;
   width: 100%;
   height: 100%;
-  background: rgba(0,0,0,.4);
+  background: rgba(15, 23, 42, .36);
   top: 0;
   left: 0;
   z-index: 10000;
+  display: flex;
+  justify-content: center;
 }
 </style>
 
 <style scoped>
 .app-container {
-  padding-bottom: 88px;
+  margin: 0 auto;
+  max-width: 1560px;
+  padding: 16px 14px 88px;
 }
 
 @media (min-width: 960px) {
   .app-container {
-    padding-bottom: 16px;
+    padding: 24px 24px 32px;
   }
 }
 </style>

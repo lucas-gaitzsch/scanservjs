@@ -1,14 +1,14 @@
 <template>
   <div>
-    <v-app-bar class="elevation-0" :color="appColor" app>
+    <v-app-bar class="app-navigation elevation-0" :color="appColor" app>
       <v-app-bar-nav-icon v-if="!smAndDown" @click.stop="drawer = !drawer" />
       <v-toolbar-title class="unselectable">{{ $t('global.application-name') }}</v-toolbar-title>
       <v-spacer />
       <v-toolbar-items class="d-none d-md-block">
-        <v-btn class="transparent" elevation="0" @click="go('/scan')"><v-icon class="mr-2" :icon="mdiCamera" />{{ $t('navigation.scan') }}</v-btn>
-        <v-btn class="transparent" elevation="0" @click="go('/files')"><v-icon class="mr-2" :icon="mdiFileDocumentMultiple" />{{ $t('navigation.files') }}</v-btn>
-        <v-btn class="transparent" elevation="0" @click="go('/settings')"><v-icon class="mr-2" :icon="mdiCog" />{{ $t('navigation.settings') }}</v-btn>
-        <v-btn class="transparent" elevation="0" @click="go('/about')"><v-icon class="mr-2" :icon="mdiInformation" />{{ $t('navigation.about') }}</v-btn>
+        <v-btn class="nav-button" :class="{ 'nav-button-active': isActive('/scan') }" elevation="0" @click="go('/scan')"><v-icon class="mr-2" :icon="mdiCamera" />{{ $t('navigation.scan') }}</v-btn>
+        <v-btn class="nav-button" :class="{ 'nav-button-active': isActive('/files') }" elevation="0" @click="go('/files')"><v-icon class="mr-2" :icon="mdiFileDocumentMultiple" />{{ $t('navigation.files') }}</v-btn>
+        <v-btn class="nav-button" :class="{ 'nav-button-active': isActive('/settings') }" elevation="0" @click="go('/settings')"><v-icon class="mr-2" :icon="mdiCog" />{{ $t('navigation.settings') }}</v-btn>
+        <v-btn class="nav-button" :class="{ 'nav-button-active': isActive('/about') }" elevation="0" @click="go('/about')"><v-icon class="mr-2" :icon="mdiInformation" />{{ $t('navigation.about') }}</v-btn>
       </v-toolbar-items>
     </v-app-bar>
 
@@ -58,19 +58,19 @@
     </v-navigation-drawer>
 
     <v-bottom-navigation v-if="smAndDown" grow app :color="appColor">
-      <v-btn @click="go('/scan')">
+      <v-btn :active="isActive('/scan')" @click="go('/scan')">
         <v-icon :icon="mdiCamera" />
         <span>{{ $t('navigation.scan') }}</span>
       </v-btn>
-      <v-btn @click="go('/files')">
+      <v-btn :active="isActive('/files')" @click="go('/files')">
         <v-icon :icon="mdiFileDocumentMultiple" />
         <span>{{ $t('navigation.files') }}</span>
       </v-btn>
-      <v-btn @click="go('/settings')">
+      <v-btn :active="isActive('/settings')" @click="go('/settings')">
         <v-icon :icon="mdiCog" />
         <span>{{ $t('navigation.settings') }}</span>
       </v-btn>
-      <v-btn @click="go('/about')">
+      <v-btn :active="isActive('/about')" @click="go('/about')">
         <v-icon :icon="mdiInformation" />
         <span>{{ $t('navigation.about') }}</span>
       </v-btn>
@@ -112,6 +112,10 @@ export default {
   },
 
   methods: {
+    isActive(location) {
+      return this.$route.path === location || (location === '/scan' && this.$route.path === '/');
+    },
+
     go(location) {
       if (this.$route.path !== location) {
         this.$router.push(location);
@@ -122,6 +126,32 @@ export default {
 </script>
 
 <style>
+.app-navigation {
+  border-bottom: 1px solid rgba(var(--v-border-color), 0.12) !important;
+}
+
+.app-navigation .v-toolbar-title {
+  font-weight: 650;
+  letter-spacing: -0.03em;
+}
+
+.nav-button {
+  border-radius: 999px !important;
+  margin: 10px 3px !important;
+  opacity: 0.74;
+}
+
+.nav-button-active {
+  background: rgba(var(--v-theme-primary), 0.12) !important;
+  color: rgb(var(--v-theme-primary)) !important;
+  opacity: 1;
+}
+
+.v-bottom-navigation {
+  border-top: 1px solid rgba(var(--v-border-color), 0.12) !important;
+  box-shadow: 0 -10px 28px rgba(15, 23, 42, 0.08) !important;
+}
+
 .unselectable {
   -moz-user-select: none;
   -webkit-user-select: none;

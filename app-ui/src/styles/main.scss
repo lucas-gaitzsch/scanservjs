@@ -3,3 +3,38 @@ $font: 'Segoe UI', 'Roboto', 'Lucida Grande', 'San Francisco', 'Lucidabright', '
 @use 'vuetify' with (
   $body-font-family: $font,
 );
+
+.v-theme--light {
+  --scanserv-page-bg: #f5f7fb;
+}
+
+.v-theme--dark {
+  --scanserv-page-bg: #101419;
+}
+
+html,
+body,
+#app {
+  min-height: 100%;
+}
+
+body {
+  background: var(--scanserv-page-bg);
+}
+
+.v-application {
+  background: var(--scanserv-page-bg) !important;
+}
+
+.v-btn {
+  letter-spacing: 0.01em !important;
+  text-transform: none !important;
+}
+
+.v-field {
+  border-radius: 12px !important;
+}
+
+.v-card {
+  border-radius: 16px;
+}
