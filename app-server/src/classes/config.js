@@ -3,7 +3,7 @@ const path = require('path');
 const Constants = require('../constants');
 const Package = require('../../package.json');
 
-const BASE_PATH = process.env.SCANSERV_BASE_PATH || './';
+const BASE_PATH = process.env.SCANSERV_BASE_PATH || path.join(__dirname, '../..');
 
 module.exports = class Config {
   /**
