@@ -1,7 +1,7 @@
 <template>
   <div>
     <v-app-bar class="app-navigation elevation-0" :color="appColor" app>
-      <v-app-bar-nav-icon v-if="!smAndDown" @click.stop="drawer = !drawer" />
+      <v-app-bar-nav-icon v-if="smAndDown" @click.stop="drawer = !drawer" />
       <v-toolbar-title class="unselectable">{{ $t('global.application-name') }}</v-toolbar-title>
       <v-spacer />
       <v-toolbar-items class="d-none d-md-flex nav-items">
