@@ -4,7 +4,7 @@
       <v-app-bar-nav-icon v-if="!smAndDown" @click.stop="drawer = !drawer" />
       <v-toolbar-title class="unselectable">{{ $t('global.application-name') }}</v-toolbar-title>
       <v-spacer />
-      <v-toolbar-items class="d-none d-md-block">
+      <v-toolbar-items class="d-none d-md-flex nav-items">
         <v-btn class="nav-button" :class="{ 'nav-button-active': isActive('/scan') }" elevation="0" @click="go('/scan')"><v-icon class="mr-2" :icon="mdiCamera" />{{ $t('navigation.scan') }}</v-btn>
         <v-btn class="nav-button" :class="{ 'nav-button-active': isActive('/files') }" elevation="0" @click="go('/files')"><v-icon class="mr-2" :icon="mdiFileDocumentMultiple" />{{ $t('navigation.files') }}</v-btn>
         <v-btn class="nav-button" :class="{ 'nav-button-active': isActive('/settings') }" elevation="0" @click="go('/settings')"><v-icon class="mr-2" :icon="mdiCog" />{{ $t('navigation.settings') }}</v-btn>
@@ -116,10 +116,17 @@ export default {
   letter-spacing: -0.03em;
 }
 
+.nav-items {
+  align-items: center;
+  gap: 4px;
+}
+
 .nav-button {
   border-radius: 999px !important;
-  margin: 10px 3px !important;
+  height: 44px !important;
+  margin: 0 2px !important;
   opacity: 0.74;
+  padding: 0 16px !important;
 }
 
 .nav-button-active {

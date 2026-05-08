@@ -465,8 +465,17 @@ export default {
       const mdBreakpoint = 960;
       if (window.innerWidth >= mdBreakpoint) {
         const appbarHeight = 112;
-        const sidePanelsWidth = window.innerWidth >= 1280 ? 744 : 384;
-        const availableWidth = window.innerWidth - sidePanelsWidth - 64;
+        const pageStyle = window.getComputedStyle(this.$el);
+        const columnGap = parseFloat(pageStyle.columnGap || pageStyle.gap) || 20;
+        const settingsWidth = this.$el.querySelector('.scan-settings')?.offsetWidth || 360;
+        const adjustmentsWidth = window.innerWidth >= 1280
+          ? this.$el.querySelector('.scan-adjustments')?.offsetWidth || 360
+          : 0;
+        const panelGaps = window.innerWidth >= 1280 ? 2 : 1;
+        const availableWidth = Math.max(
+          320,
+          this.$el.clientWidth - settingsWidth - adjustmentsWidth - (columnGap * panelGaps)
+        );
         const availableHeight = window.innerHeight - appbarHeight;
         const desiredWidth = availableHeight * paperRatio;
         this.preview.width = Math.max(320, Math.min(availableWidth, desiredWidth));
@@ -941,6 +950,7 @@ export default {
   margin: 0 auto;
   max-width: 1440px;
   padding: 8px 0 156px;
+  width: 100%;
 }
 
 .scan-panel,
@@ -1019,11 +1029,14 @@ export default {
 
 .scan-preview {
   align-self: start;
+  justify-self: center;
+  max-width: 100%;
   min-width: 0;
   width: 100%;
 }
 
 .scan-preview-card {
+  min-width: 0;
   overflow: hidden;
 }
 
@@ -1144,7 +1157,7 @@ export default {
 
 @media (min-width: 960px) {
   .scan-page {
-    grid-template-columns: minmax(300px, 360px) minmax(320px, auto);
+    grid-template-columns: minmax(300px, 360px) minmax(0, 1fr);
     justify-content: center;
     padding: 18px 0 32px;
   }
@@ -1160,7 +1173,7 @@ export default {
 
 @media (min-width: 1280px) {
   .scan-page {
-    grid-template-columns: minmax(300px, 360px) minmax(320px, auto) minmax(300px, 360px);
+    grid-template-columns: minmax(300px, 360px) minmax(0, 1fr) minmax(300px, 360px);
   }
 
   .scan-adjustments {
