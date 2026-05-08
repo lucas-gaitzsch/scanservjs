@@ -1104,7 +1104,7 @@ export default {
   backdrop-filter: blur(14px);
   background: rgba(var(--v-theme-surface), 0.94);
   border-top: 1px solid rgba(var(--v-border-color), 0.16);
-  bottom: 56px;
+  bottom: 0;
   box-shadow: 0 -12px 30px rgba(15, 23, 42, 0.08);
   display: grid;
   gap: 10px;

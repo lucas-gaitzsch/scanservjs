@@ -389,7 +389,7 @@ div.v-input.v-input__slider {
 .files-mobile-actions {
   background: rgb(var(--v-theme-surface));
   border-top: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
-  bottom: 56px;
+  bottom: 0;
   display: grid;
   gap: 8px;
   grid-template-columns: 1fr 1fr;

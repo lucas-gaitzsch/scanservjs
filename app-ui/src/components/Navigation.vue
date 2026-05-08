@@ -56,25 +56,6 @@
         </div>
       </template>
     </v-navigation-drawer>
-
-    <v-bottom-navigation v-if="smAndDown" grow app :color="appColor">
-      <v-btn :active="isActive('/scan')" @click="go('/scan')">
-        <v-icon :icon="mdiCamera" />
-        <span>{{ $t('navigation.scan') }}</span>
-      </v-btn>
-      <v-btn :active="isActive('/files')" @click="go('/files')">
-        <v-icon :icon="mdiFileDocumentMultiple" />
-        <span>{{ $t('navigation.files') }}</span>
-      </v-btn>
-      <v-btn :active="isActive('/settings')" @click="go('/settings')">
-        <v-icon :icon="mdiCog" />
-        <span>{{ $t('navigation.settings') }}</span>
-      </v-btn>
-      <v-btn :active="isActive('/about')" @click="go('/about')">
-        <v-icon :icon="mdiInformation" />
-        <span>{{ $t('navigation.about') }}</span>
-      </v-btn>
-    </v-bottom-navigation>
   </div>
 </template>
 
@@ -145,11 +126,6 @@ export default {
   background: rgba(var(--v-theme-primary), 0.12) !important;
   color: rgb(var(--v-theme-primary)) !important;
   opacity: 1;
-}
-
-.v-bottom-navigation {
-  border-top: 1px solid rgba(var(--v-border-color), 0.12) !important;
-  box-shadow: 0 -10px 28px rgba(15, 23, 42, 0.08) !important;
 }
 
 .unselectable {
