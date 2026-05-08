@@ -3,7 +3,6 @@
     <aside class="scan-panel scan-settings">
       <div class="scan-panel-header">
         <span class="scan-kicker">{{ $t('navigation.scan') }}</span>
-        <h1>{{ $t('scan.btn-scan') }}</h1>
       </div>
 
       <div class="scan-control-group">
@@ -112,7 +111,6 @@
         <div class="scan-preview-header">
           <div>
             <span class="scan-kicker">{{ $t('scan.btn-preview') }}</span>
-            <strong>{{ selectedPaperSizeLabel }}</strong>
           </div>
         </div>
         <div class="scan-preview-canvas">
@@ -134,18 +132,18 @@
 
       <div class="scan-control-group">
         <template v-if="geometry">
-          <div class="scan-paper-panel">
+          <div>
             <v-select
               class="scan-paper-size-select"
+              density="comfortable"
+              hide-details
+              variant="outlined"
               :model-value="selectedPaperSize"
               :label="$t('scan.paperSize')"
               :no-data-text="$t('global.no-data-text')"
               :items="paperSizeOptions"
               item-title="name"
               item-value="value"
-              density="compact"
-              variant="solo-filled"
-              hide-details
               @update:model-value="updatePaperSize" />
 
             <div v-if="isCustomPaperSize" class="scan-coordinate-grid">
@@ -387,11 +385,6 @@ export default {
 
     isCustomPaperSize() {
       return this.selectedPaperSize === CUSTOM_PAPER_SIZE;
-    },
-
-    selectedPaperSizeLabel() {
-      const selected = this.paperSizeOptions.find(paper => paper.value === this.selectedPaperSize);
-      return selected ? selected.name : this.$t('scan.paperSize');
     },
 
     matchingPaperSizeValue() {
@@ -1082,13 +1075,6 @@ export default {
   justify-content: center;
   min-height: 320px;
   padding: 24px;
-}
-
-.scan-paper-panel {
-  background: rgba(var(--v-theme-primary), 0.045);
-  border: 1px solid rgba(var(--v-theme-primary), 0.16);
-  border-radius: 16px;
-  padding: 14px;
 }
 
 .scan-paper-size-select {
