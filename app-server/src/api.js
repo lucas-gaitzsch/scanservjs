@@ -1,4 +1,5 @@
 const log = require('loglevel').getLogger('Api');
+const path = require('path');
 
 const FileInfo = require('./classes/file-info');
 const LogFormatter = require('./classes/log-formatter');
@@ -8,6 +9,7 @@ const Request = require('./classes/request');
 const application = require('./application');
 const config = application.config();
 const scanimageCommand = application.scanimageCommand();
+const DefaultPreview = FileInfo.create(path.join(__dirname, 'assets/default-preview.jpg'));
 
 module.exports = new class Api {
 
@@ -107,7 +109,8 @@ module.exports = new class Api {
     }
 
     // If not then it's possible the default image is not quite the correct aspect ratio
-    const buffer = FileInfo.create(`${config.previewDirectory}/default.jpg`).toBuffer();
+    const fallback = FileInfo.create(`${config.previewDirectory}/default.jpg`);
+    const buffer = (fallback.exists() ? fallback : DefaultPreview).toBuffer();
 
     try {
       // We need to know the correct aspect ratio from the device
